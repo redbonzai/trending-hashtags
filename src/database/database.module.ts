@@ -10,7 +10,7 @@ import { Tweet } from './entities/tweet.entity';
     ConfigModule.forRoot({
       isGlobal: true, // this is a bogus update
       validationSchema: Joi.object({
-        REDIS_CLUSTER_URIS: Joi.string().required(),
+        REDIS_URL: Joi.string().required(),
         DB_HOST: Joi.string().required(),
         DB_PORT: Joi.number().required(),
         POSTGRES_USER: Joi.string().required(),

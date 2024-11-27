@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { Logger, Module, OnModuleInit } from '@nestjs/common';
 import { LoggerModule as PinoLogger } from '@app/logger';
 import { ConfigModule } from '@nestjs/config';
 import { TrendingModule } from './trending/trending.module';
@@ -7,6 +7,7 @@ import { RedisModule } from './redis/redis.module';
 import Joi from 'joi';
 import { DatabaseModule } from './database/database.module';
 import { QueueModule } from './queues/queues.module';
+import { TrendingService } from '@app/trending/trending.service';
 
 @Module({
   imports: [
@@ -17,8 +18,7 @@ import { QueueModule } from './queues/queues.module';
         NODE_ENV: Joi.string()
           .valid('development', 'production', 'test', 'provision')
           .default('development'),
-        APP_LOG_LEVEL: Joi.string().required(),
-        LIB_LOG_LEVEL: Joi.string().required(),
+        LOG_LEVEL: Joi.string().required(),
         PORT: Joi.number().default(8080),
       }),
     }),
@@ -31,4 +31,12 @@ import { QueueModule } from './queues/queues.module';
   controllers: [],
   providers: [],
 })
-export class AppModule {}
+export class AppModule implements OnModuleInit {
+  private readonly logger = new Logger(AppModule.name);
+  constructor(private readonly trendingService: TrendingService) {}
+
+  async onModuleInit() {
+    await this.trendingService.warmUpRedisCache();
+    this.logger.log('App Module Initialized the Warmup of Redis Cache');
+  }
+}
