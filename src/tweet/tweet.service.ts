@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { TweetRepository } from './tweet.repository';
-import { Tweet as TweetResponse } from '../interfaces/tweet-response.interface';
+import { TweetResponse as TweetResponse } from '../interfaces/tweet-response.interface';
 import { Tweet as TweetEntity } from '../database/entities/tweet.entity';
 
 @Injectable()

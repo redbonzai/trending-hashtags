@@ -5,7 +5,7 @@ export interface Hashtag {
   updatedAt: string; // Use `Date` if you need to manipulate this as an actual date object
 }
 
-export interface Tweet {
+export interface TweetResponse {
   id: string;
   content: string;
   createdAt: string; // Use `Date` if you need to manipulate this as an actual date object

@@ -24,12 +24,49 @@
       ],
       "@app/logger/*": [
         "libs/logger/src/*"
-      ]
+      ],
+      "@app/database": [
+        "src/database"
+      ],
+      "@app/database/*": [
+          "src/database/*"
+      ],
+      "@app/interfaces": [
+        "src/interfaces"
+      ],
+      "@app/interfaces/*": [
+          "src/interfaces/*"
+      ],
+      "@app/queues": [
+        "src/queues"
+      ],
+      "@app/queues/*": [
+          "src/queues/*"
+      ],
+      "@app/redis": [
+        "src/redis"
+      ],
+      "@app/redis/*": [
+        "src/redis/*"
+      ],
+      "@app/trending": [
+        "src/trending"
+      ],
+      "@app/trending/*": [
+          "src/trending/*"
+      ],
+      "@app/tweet": [
+        "src/tweet"
+      ],
+      "@app/tweet/*": [
+          "src/tweet/*"
+      ],
     }
   },
   "include": [
     "src/**/*.ts",
-    "test/**/*.ts"
+    "test/**/*.ts",
+    "jest.config.ts"
   ],
   "exclude": [
     "./node_modules",
