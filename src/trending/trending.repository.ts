@@ -19,6 +19,10 @@ export class TrendingRepository {
     this.hashtagRepo = this.dataSource.getRepository(Hashtag);
   }
 
+  getRedisClient(): Redis {
+    return this.redisClient;
+  }
+
   /**
    * Increment the counts of given hashtags.
    * This method updates both Redis and PostgreSQL for durability and quick access.

@@ -1,18 +1,18 @@
 # Performance Testing with `wrk`
 
-This guide will show you how to perform thorough and comprehensive performance testing of your system using the `wrk` tool. `wrk` is a powerful HTTP benchmarking tool capable of generating significant load with a few threads and connections. It is available on macOS via Homebrew and can be installed using:
+This is a brief guide on how to performance test the `trending-hashtag` system with the `wrk` tool. 
+`wrk` is a powerful HTTP benchmarking tool capable of generating significant load with a few threads and connections.
+It is available on macOS via Homebrew and can be installed using:
 
 ```sh
 brew install wrk
 ```
 
-Below, we will go step-by-step through various test scenarios, allowing you to gain in-depth insight into the performance and behavior of your system.
-
 ## Basic Usage of `wrk`
 
-To begin, let's cover the command you have already executed:
+Run a simple load test on the `/tweet` endpoint:
 
-```sh
+```bash
 wrk -t10 -c200 -d30s -s post.lua http://localhost:8080/tweet
 ```
 
@@ -28,7 +28,7 @@ Explanation:
 ### 1. **Testing with Different Load Scenarios**
 
 #### a. Increasing Connections Gradually
-Start by testing your system's response to a gradual increase in connections:
+Here is a gradual load tests that increases connections with each execution:
 
 ```sh
 wrk -t4 -c50 -d30s http://localhost:8080/tweet
@@ -36,10 +36,11 @@ wrk -t4 -c100 -d30s http://localhost:8080/tweet
 wrk -t4 -c200 -d30s http://localhost:8080/tweet
 ```
 
-Gradually increase the `-c` (concurrent connections) value to understand how your system scales and identify the point at which performance starts to degrade.
+Gradually increase the `-c` (concurrent connections) value to determine system scalability by viewing latency and requests/s times.
+This also helps to determine the points at which the system starts to degrade in performance.
 
 #### b. Varying Thread Counts
-Use different thread counts to find the optimal value for your system:
+Vary the thread counts to determine optimal value and possible bottlenecks:
 
 ```sh
 wrk -t2 -c100 -d30s http://localhost:8080/tweet
@@ -47,11 +48,11 @@ wrk -t8 -c100 -d30s http://localhost:8080/tweet
 wrk -t16 -c100 -d30s http://localhost:8080/tweet
 ```
 
-Experimenting with different `-t` values will help you determine the right number of threads based on your CPU resources.
+Experimenting with different `-t` values will help determine the optimal threads based on existing CPU resources.
 
 ### 2. **Custom Request Payloads with Lua**
 
-`wrk` allows you to use Lua scripts for more complex requests, such as sending POST data. Below is an example of a Lua script (`post.lua`) to send JSON data:
+`wrk` allows the use of Lua scripts for sending POST data. Please see the script below (`post.lua`) to send JSON data:
 
 ```lua
 wrk.method = "POST"
@@ -67,14 +68,40 @@ wrk -t4 -c100 -d1m -s post.lua http://localhost:8080/tweet
 
 ### 3. **Longer Duration Testing**
 
-To observe how your system performs over extended periods, run longer tests:
-
+These calls will return a synopsis of system performance:
+Please view performance results from the trending-hashtags service:
 ```sh
-wrk -t8 -c200 -d5m http://localhost:8080/tweet
-wrk -t8 -c200 -d10m http://localhost:8080/tweet
+wrk -t4 -c50 -d30s http://localhost:8080/tweet
+wrk -t4 -c100 -d30s http://localhost:8080/tweet
+wrk -t4 -c200 -d30s http://localhost:8080/tweet
+Running 30s test @ http://localhost:8080/tweet
+  4 threads and 50 connections
+  Thread Stats   Avg      Stdev     Max   +/- Stdev
+    Latency    84.05ms   22.80ms 307.15ms   88.54%
+    Req/Sec   144.96     33.35   222.00     68.91%
+  17237 requests in 30.06s, 16.57MB read
+Requests/sec:    573.50
+Transfer/sec:    564.54KB
+---
+Running 30s test @ http://localhost:8080/tweet
+  4 threads and 100 connections
+  Thread Stats   Avg      Stdev     Max   +/- Stdev
+    Latency   212.94ms  114.10ms   1.74s    94.07%
+    Req/Sec   122.47     30.70   353.00     69.22%
+  14676 requests in 30.13s, 14.11MB read
+Requests/sec:    487.12
+Transfer/sec:    479.51KB
+---
+Running 30s test @ http://localhost:8080/tweet
+  4 threads and 200 connections
+  Thread Stats   Avg      Stdev     Max   +/- Stdev
+    Latency   530.86ms  194.39ms   1.99s    77.14%
+    Req/Sec    88.55     34.21   220.00     71.60%
+  10501 requests in 30.09s, 24.55MB read
+  Socket errors: connect 0, read 70, write 0, timeout 124
+Requests/sec:    349.01
+Transfer/sec:    835.63KB
 ```
-
-This helps in detecting memory leaks, throttling, and other issues that may not appear during shorter runs.
 
 ### 4. **Testing with Headers and Query Parameters**
 
@@ -93,44 +120,13 @@ Run the test:
 wrk -t4 -c100 -d1m -s headers.lua http://localhost:8080
 ```
 
-### 5. **Benchmarking Different Endpoints**
 
-Run tests for all your key endpoints:
-
-```sh
-wrk -t4 -c50 -d30s http://localhost:8080/tweet
-wrk -t4 -c50 -d30s http://localhost:8080/user
-wrk -t4 -c50 -d30s http://localhost:8080/comment
-```
-
-This will give you insight into the performance of different parts of your system and help identify any weak points.
-
-### 6. **Analyzing Results**
+### 5. **Analyzing Results**
 
 `wrk` outputs valuable metrics, including:
 - **Requests per second**: How many requests your system can handle.
 - **Latency**: Time taken for requests to be processed.
 - **Transfer/sec**: Throughput in terms of bytes transferred.
-
-Pay special attention to latency and throughput as you increase concurrency to spot bottlenecks and identify areas for optimization.
-
-### 7. **Documenting Your Tests**
-
-Document each test run, including:
-- Configuration (`-t`, `-c`, `-d`, etc.).
-- Results: Requests/sec, latency, transfer/sec.
-- Observations: Any errors, increasing latency, etc.
-
-This will help build a thorough record of how your system performs under different load conditions.
-
-## Example README.md for `wrk` Tests
-
-Create a `README.md` to document your testing methodology and guide others on how to run similar tests.
-
-```markdown
-# Load Testing with `wrk`
-
-This document describes how to use `wrk` to perform load testing on the tweet service.
 
 ## Prerequisites
 
@@ -138,7 +134,7 @@ This document describes how to use `wrk` to perform load testing on the tweet se
   ```sh
   brew install wrk
   ```
-- Make sure your service is running locally on `http://localhost:8080`.
+- Make sure the service is running locally on `http://localhost:8080`.
 
 ## Basic Command
 
@@ -184,19 +180,5 @@ To test system stability over time:
 wrk -t8 -c200 -d5m http://localhost:8080/tweet
 ```
 
-## Results Analysis
 
-- **Requests per second**: The number of requests handled by the server.
-- **Latency**: The average response time.
-- **Transfer/sec**: The amount of data transferred.
-
-Document each test and any observed bottlenecks or failures.
-
-## Notes
-
-- Ensure your system's logging level is appropriate to avoid performance impacts during testing.
-- Monitor system metrics (CPU, Memory) alongside the `wrk` output for more comprehensive analysis.
-```
-
-By following these steps, you can thoroughly test your system, identify potential bottlenecks, and document the entire testing process effectively. This will help in keeping track of system improvements and ensuring stability under various load conditions.
 

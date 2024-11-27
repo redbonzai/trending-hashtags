@@ -7,6 +7,7 @@ import { Hashtag } from '@app/database/entities/hashtag.entity';
 import { mock } from 'jest-mock-extended';
 
 jest.mock('ioredis');
+jest.mock('ioredis');
 
 describe('TrendingRepository', () => {
   let trendingRepository: TrendingRepository;

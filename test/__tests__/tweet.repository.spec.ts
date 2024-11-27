@@ -8,13 +8,20 @@ import { TrendingRepository } from '@app/trending/trending.repository';
 jest.mock('@nestjs/common/services/logger.service'); // Mock logger
 
 describe('TweetRepository', () => {
+  let redisClientMock: { get: jest.Mock; set: jest.Mock };
   let tweetRepository: TweetRepository;
   let tweetRepoMock: Repository<Tweet>;
   let hashtagRepoMock: Repository<Hashtag>;
   let trendingRepositoryMock: jest.Mocked<TrendingRepository>;
 
   beforeEach(async () => {
-    // Mock DataSource and Repositories
+    // Step 1: Mock Redis client manually
+    redisClientMock = {
+      get: jest.fn().mockResolvedValue(null), // Assume no duplicate by default
+      set: jest.fn().mockResolvedValue('OK'),
+    };
+
+    // Step 2: Mock DataSource and Repositories
     const mockDataSource = {
       getRepository: jest.fn(),
     };
@@ -31,7 +38,7 @@ describe('TweetRepository', () => {
       save: jest.fn(),
     } as unknown as Repository<Hashtag>;
 
-    // Mock TrendingRepository
+    // Step 3: Mock TrendingRepository
     trendingRepositoryMock = {
       incrementHashtags: jest.fn().mockResolvedValue(undefined),
       getTopHashtags: jest.fn().mockResolvedValue([]),
@@ -40,13 +47,14 @@ describe('TweetRepository', () => {
       getHashtagsUpdatedSince: jest.fn().mockResolvedValue([]),
       updateHashtagCount: jest.fn().mockResolvedValue(undefined),
       getAllHashtagsFromDb: jest.fn().mockResolvedValue([]),
-      updateHashtagInRedis: jest.fn().mockResolvedValue(undefined), // Add this method to the mock
+      updateHashtagInRedis: jest.fn().mockResolvedValue(undefined),
     } as unknown as jest.Mocked<TrendingRepository>;
 
-    // Set up getRepository to return mocked repositories
+    // Step 4: Set up getRepository to return mocked repositories
     mockDataSource.getRepository.mockReturnValueOnce(tweetRepoMock);
     mockDataSource.getRepository.mockReturnValueOnce(hashtagRepoMock);
 
+    // Step 5: Create Testing Module
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         TweetRepository,
@@ -61,24 +69,36 @@ describe('TweetRepository', () => {
       ],
     }).compile();
 
+    // Step 6: Inject instances
     tweetRepository = module.get<TweetRepository>(TweetRepository);
+    // Inject mocked Redis client into TweetRepository instance
+    (tweetRepository as any).redisClient = redisClientMock;
   });
 
   describe('saveTweet', () => {
     it('should save a tweet and update hashtag counts', async () => {
       const content = 'Hello #world';
-      const mockTweet = { id: '1', content } as Tweet;
+      const mockTweet = { id: '1', content, hashtags: [] } as Tweet;
 
       const mockHashtag = { id: '1', tag: '#world', count: 1 } as Hashtag;
 
+      // Step 1: Mock Redis client to simulate no duplicate
+      redisClientMock.get.mockResolvedValue(null);
+
+      // Step 2: Mock Tweet repository methods
       jest.spyOn(tweetRepoMock, 'create').mockReturnValue(mockTweet);
       jest.spyOn(tweetRepoMock, 'save').mockResolvedValue(mockTweet);
-      jest.spyOn(hashtagRepoMock, 'findOne').mockResolvedValue(null);
-      jest.spyOn(hashtagRepoMock, 'create').mockReturnValue(mockHashtag);
-      jest.spyOn(hashtagRepoMock, 'save').mockResolvedValue(mockHashtag);
 
+      // Step 3: Mock Hashtag repository methods
+      jest.spyOn(hashtagRepoMock, 'findOne').mockResolvedValue(null); // Hashtag doesn't exist initially
+      jest.spyOn(hashtagRepoMock, 'create').mockReturnValue(mockHashtag);
+      jest.spyOn(hashtagRepoMock, 'save').mockResolvedValue(mockHashtag); // Return the created hashtag
+
+      // Execute the method
       await tweetRepository.saveTweet(content);
 
+      // Assertions to check if the methods are called with the expected values
+      expect(redisClientMock.get).toHaveBeenCalledWith(expect.any(String)); // Expect the hash of the content to be checked
       expect(tweetRepoMock.create).toHaveBeenCalledWith({
         content,
         hashtags: [mockHashtag],

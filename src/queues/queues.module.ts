@@ -74,7 +74,7 @@ export class QueueModule {
 
       // Generate bulk tweets
       this.logger.log('Generating bulk tweets...');
-      await this.tweetGeneratorService.generateBulkTweets(4);
+      await this.tweetGeneratorService.generateBulkTweets(20);
       this.logger.log('Bulk tweets generation completed successfully.');
     } catch (error) {
       this.logger.error('Failed to initialize the Queue:', error);
