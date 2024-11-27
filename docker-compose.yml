@@ -1,0 +1,76 @@
+services:
+  db:
+    image: postgres:14-alpine
+    container_name: postgres
+    restart: always
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+    ports:
+      - "5432:5432"
+    volumes:
+      - ./db_data:/var/lib/postgresql/data
+      - ./src/database/seeds/seed.sql:/docker-entrypoint-initdb.d/seed.sql
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U ${POSTGRES_USER}" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      redis-cluster:
+        aliases:
+          - postgres
+
+  redis:
+    image: redis:6.2
+    container_name: redis-server
+    volumes:
+      - ./redis_data:/data  # Make sure the Redis data is persisted between restarts
+    command: [ "redis-server", "--appendonly", "yes" ]
+    ports:
+      - "6379:6379"
+    networks:
+      redis-cluster:
+        aliases:
+          - redis
+    healthcheck:
+      test: [ "CMD", "redis-cli", "ping" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  app:
+    image: trending-hashtags:dev
+    container_name: trending-hashtags-app
+    build:
+      context: .
+      dockerfile: Dockerfile
+    command: pnpm run start:dev app
+    environment:
+      - NODE_ENV=development
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - POSTGRES_DB=${POSTGRES_DB}
+    env_file:
+      - ./.env
+    ports:
+      - "8080:8080" # This is the port your NestJS app will use
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    volumes:
+        - .:/app
+    networks:
+      - redis-cluster
+
+networks:
+  redis-cluster:
+    driver: bridge
+volumes:
+  db_data:
+  redis_data:
