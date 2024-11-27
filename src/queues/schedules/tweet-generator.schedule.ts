@@ -8,7 +8,7 @@ export class TweetGeneratorSchedule {
 
   constructor(private readonly tweetGeneratorService: TweetGeneratorService) {}
 
-  @Cron('*/2 * * * *') // Runs every 2 minutes
+  @Cron('*/10 * * * *') // Runs every 10 minutes
   async generateBulkTweets() {
     this.logger.log('Starting automated bulk tweet generation...');
     await this.tweetGeneratorService.generateBulkTweets(10);

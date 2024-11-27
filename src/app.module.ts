@@ -1,6 +1,4 @@
 import { Module } from '@nestjs/common';
-import { AppController } from './app.controller';
-import { AppService } from './app.service';
 import { LoggerModule as PinoLogger } from '@app/logger';
 import { ConfigModule } from '@nestjs/config';
 import { TrendingModule } from './trending/trending.module';
@@ -30,7 +28,7 @@ import { QueueModule } from './queues/queues.module';
     DatabaseModule,
     QueueModule,
   ],
-  controllers: [AppController],
-  providers: [AppService],
+  controllers: [],
+  providers: [],
 })
 export class AppModule {}

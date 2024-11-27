@@ -1,76 +1,184 @@
-# Trending Hashtags Application - README
+# Trending Hashtags App
 
 ## 1. Overview
-The Trending Hashtags Application is a robust, distributed system designed to collect tweets, calculate the cardinality of hashtags, and provide trending hashtags in real-time. It leverages Redis for quick access, PostgreSQL for durable storage, and NestJS for managing the API and worker processes.
+
+The Trending Hashtags App allows users to create tweets and determine the most trending hashtags. It is built with NestJS and uses Redis for fast data retrieval and PostgreSQL for persistence. The application is designed to handle a load of up to 1 request per second and aims to support significantly higher loads. Tweets and hashtags are managed through RESTful API endpoints, and hashtag cardinality is calculated regularly to keep trending information updated.
 
 ## 2. User Guide
-The application provides the following functionality:
 
-- **Create Tweets**: Users can create tweets through the API, which may include hashtags.
-- **Trending Hashtags**: The API allows users to retrieve the top trending hashtags, with counts, based on recent activity.
+The application exposes the following endpoints:
 
-### Available Endpoints
-- **POST /tweets**: Create a new tweet with content and hashtags.
-- **GET /trending-hashtags**: Retrieve the list of trending hashtags with their counts.
+### Create Tweet
+- **POST** `/tweet`
+
+  Payload:
+  ```json
+  {
+      "tweet": "<tweet>"
+  }
+  ```
+
+### Trending Hashtags
+- **GET** `/trending-hashtags`
+
+  Response:
+  ```json
+  {
+      "hashtags": [
+          {"tag": "<hashtag1>", "count": <count1>},
+          {"tag": "<hashtag2>", "count": <count2>},
+          "...",
+          {"tag": "<hashtag25>", "count": <count25>}
+      ]
+  }
+  ```
+
+  This endpoint returns the top 25 trending hashtags along with their cardinality, sorted in descending order.
 
 ## 3. Prerequisites
-To run the application, you need:
 
-- **Node.js**: Version 20.x or later.
-- **PostgreSQL**: Version 14 or later.
-- **Redis**: Version 6.x or later.
-- **Docker** (Optional): For containerized deployment.
+- **Node.js** (v16 or above)
+- **Docker** and **Docker Compose**
+- **Redis** and **PostgreSQL** containers are required for the application to work correctly.
 
 ## 4. Developer Guide
-This section will help developers set up, configure, and understand the inner workings of the application.
 
 ### 4.1 Setup and Configuration
 
-#### Clone the Codebase
-```bash
-git clone https://github.com/your-repository/trending-hashtags-app.git
-cd trending-hashtags-app
-```
+1. **Clone the repository**:
+   ```sh
+   git clone <repository_url>
+   cd trending-hashtags-app
+   ```
 
-#### Install Dependencies
-Ensure you have Node.js installed, then run:
-```bash
-npm install
-```
+2. **Install dependencies**:
+   ```sh
+   npm install
+   # or
+   yarn install
+   # or
+   pnpm install
+   ```
 
-#### Update Environment Variables
-The application requires certain environment variables to be set up. Update the `.env` file with the required variables.
+3. **Ensure Docker Desktop is installed**. Then run:
+   ```sh
+   docker compose up --build
+   ```
+   This command will build the containers and start the application along with the necessary services.
 
-| Environment Variable | Description                             | Example                  |
-|----------------------|-----------------------------------------|--------------------------|
-| `REDIS_URL`          | The URL of the Redis server             | `redis://localhost:6379` |
-| `POSTGRES_HOST`      | The hostname of the PostgreSQL database | `localhost`              |
-| `POSTGRES_PORT`      | The port number for PostgreSQL          | `5432`                   |
-| `POSTGRES_USER`      | Username for PostgreSQL                 | `postgres`               |
-| `POSTGRES_PASSWORD`  | Password for the PostgreSQL user        | `your_password`          |
-| `POSTGRES_DB`        | Name of the PostgreSQL database         | `trending_db`            |
-| `NODE_ENV`           | Environment (development, production)   | `development`            |
-| `APP_LOG_LEVEL`      | Log level for application logs          | `debug`                  |
+4. **Environment Variables**:
+   Update the `.env` file with the following environment variables:
+
+   | Variable         | Description                           | Example                |
+      |------------------|---------------------------------------|------------------------|
+   | `REDIS_URL`      | Redis connection string               | `redis://localhost:6379`|
+   | `DATABASE_URL`   | PostgreSQL connection string          | `postgres://user:pass@localhost:5432/db` |
+   | `NODE_ENV`       | Environment type (development/production) | `development`      |
+   | `PORT`           | Port on which the application runs    | `8080`                 |
 
 ### 4.2 Testing
-The application uses Jest for unit testing. To run the tests, execute:
-```bash
-npm test
-```
-To run tests in watch mode for development:
-```bash
-npm run test:watch
-```
-Ensure all tests are passing before making a PR or deploying changes.
 
-### 4.3 Chain of Events When the Application Loads
+- **Run Unit Tests**:
+  ```sh
+  npm run test
+  ```
 
-#### When a Tweet is Created
-1. **Tweet Submission**: The user submits a tweet via the API (`POST /tweets`). The tweet may contain multiple hashtags.
-2. **Tweet Repository Processing**: The tweet is saved in the PostgreSQL database, and associated hashtags are extracted and saved or updated accordingly.
-3. **Hashtag Cardinality Increment**: For each hashtag in the tweet, the count is incremented both in PostgreSQL and in Redis.
-4. **Background Worker Updates**: A `tweet-created` event is emitted, which is picked up by the hashtag aggregator worker. The worker processes hashtag cardinalities and updates Redis for fast access.
-5. **Trending Update**: Every 10 minutes, a cron job runs to recalculate the trending hashtags based on the latest data, ensuring the Redis cache is updated with the most recent trends.
+- **Run Performance Tests**:
+  Reference the [PerformanceTesting.md](./PerformanceTesting.md) file for details on running performance tests with `wrk`. This file explains how to benchmark the application, covering different load scenarios.
 
-These chain of events ensure that every new tweet is properly handled, stored, and that the trending hashtags are always kept up-to-date.
+  Here's a simple load test using `wrk`:
+  ```sh
+  wrk -t10 -c200 -d30s -s post.lua http://localhost:8080/tweet
+  ```
+  For more comprehensive performance tests, including longer durations and various scenarios, see the detailed documentation.
+
+### 4.3 Chain of Events when Application Loads
+
+- **When a Tweet is Created**:
+    1. The tweet is processed by `tweet-generator.worker.ts`.
+    2. Hashtags are extracted and stored in PostgreSQL, while counts are updated in Redis for quick access.
+    3. Hashtag counts are periodically aggregated by `hashtag-aggregator.worker.ts` to ensure trending information is up-to-date.
+
+## 5. Automated Background Processes
+
+The application runs several automated background processes to keep hashtag information updated and optimized for performance. Below are the details:
+
+### 5.1 Bulk Tweet Generation
+
+A scheduled task is set up to generate bulk tweets every 10 minutes:
+
+- **Cron Schedule** (`tweet-generator.schedule.ts`):
+  ```typescript
+  import { Injectable, Logger } from '@nestjs/common';
+  import { Cron } from '@nestjs/schedule';
+  import { TweetGeneratorService } from './tweet-generator.service';
+
+  @Injectable()
+  export class TweetGeneratorSchedule {
+    private readonly logger = new Logger(TweetGeneratorSchedule.name);
+
+    constructor(private readonly tweetGeneratorService: TweetGeneratorService) {}
+
+    @Cron('*/10 * * * *') // Runs every 10 minutes
+    async generateBulkTweets() {
+      this.logger.log('Starting bulk tweet generation...');
+      await this.tweetGeneratorService.generateBulkTweets(4);
+      this.logger.log('Bulk tweets generation completed.');
+    }
+  }
+  ```
+
+This automated process uses the `TweetGeneratorService` to generate tweets at regular intervals to test the trending hashtag feature.
+
+### 5.2 Hashtag Aggregation
+
+The system aggregates hashtag cardinality every 10 minutes to ensure trending data is up-to-date:
+
+- **Cron Schedule** (`hashtag-aggregator.schedule.ts`):
+  ```typescript
+  import { Injectable, Logger } from '@nestjs/common';
+  import { Cron } from '@nestjs/schedule';
+  import { TrendingRepository } from '../../trending/trending.repository';
+
+  @Injectable()
+  export class HashtagAggregatorSchedule {
+    private readonly logger = new Logger(HashtagAggregatorSchedule.name);
+
+    constructor(private readonly trendingRepository: TrendingRepository) {}
+
+    @Cron('*/10 * * * *') // Runs every 10 minutes
+    async aggregateHashtags() {
+      this.logger.log('Starting automated hashtag aggregation...');
+      await this.trendingRepository.updateTrendingHashtags();
+      this.logger.log('Hashtag aggregation completed.');
+    }
+  }
+  ```
+
+This task is responsible for updating the hashtag counts in both PostgreSQL and Redis.
+
+## 6. API Specifications and Technical Details
+
+### API Endpoints
+
+1. **POST /tweet**: Creates a new tweet with the given content.
+    - Expected load: Up to 1 request per second.
+    - To handle higher loads, use Redis to cache data and workers to process incoming requests.
+
+2. **GET /trending-hashtags**: Retrieves trending hashtags with their cardinality in descending order.
+    - Bonus: The trending data is cached in Redis for faster access, and updates are processed asynchronously to support high cardinality.
+
+### Handling Duplicate Tweets
+
+- Duplicate tweets are identified and filtered out to avoid processing the same tweet multiple times. This helps in saving resources and improving the accuracy of hashtag trends.
+
+### Durability
+
+- Data is stored in both Redis and PostgreSQL, ensuring durability. On service restart, data is reloaded from PostgreSQL, while Redis serves as a high-performance cache.
+
+## 7. Conclusion
+
+This application is designed to handle the requirements outlined in the prompt, providing a scalable and durable solution for managing trending hashtags based on tweet activity. The automated processes running in the background ensure the system remains performant and that data is consistently updated.
+
+For further questions or additional documentation, refer to the included files or contact the repository maintainer.
 

@@ -8,7 +8,7 @@ export class HashtagAggregatorSchedule {
 
   constructor(private readonly trendingRepository: TrendingRepository) {}
 
-  @Cron('*/2 * * * *') // Runs every 2 minutes
+  @Cron('*/10 * * * *') // Runs every 10 minutes
   async aggregateHashtags() {
     this.logger.log('Starting automated hashtag aggregation...');
     await this.aggregateHashtagsCardinality();
