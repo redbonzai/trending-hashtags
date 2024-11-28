@@ -231,6 +231,7 @@ If you encounter issues while running commands, consider:
   nx run trending-hashtags-app:test --verbose
   ```
 </details>
+
 ### 4.3 Chain of Events when Application Loads
 
 - **When a Tweet is Created**:
