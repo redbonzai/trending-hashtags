@@ -55,23 +55,36 @@ jobs:
   check-commits:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4.2.2
+      - uses: actions/checkout@v4
         with:
-          fetch-depth: 0        # Fetch the entire Git history
-          fetch-tags: true      # Explicitly fetch all tags
+          fetch-depth: 0
+          fetch-tags: true
 
-      - name: Set up Cocogitto
-        uses: redbonzai/github-actions/setup-cocogitto@main
+      - name: List tags for debugging
+        run: git tag -l
+
+      - uses: redbonzai/github-actions/setup-cocogitto@v1
         with:
           version: 6.1.0
-          architecture: x86_64-unknown-linux-musl
 
       - name: Check Conventional Commit Compliance
-        uses: redbonzai/github-actions/cog-check@main
-        with:
-          from-latest-tag: true
-          ignore-merge-commits: true
+        run: |
+          set -eux
+          
+          # Generate CLI opts for cog
+          CLI_OPTS=''
+          if [ "${{ inputs.ignore-merge-commits }}" == "true" ]; then
+            CLI_OPTS+=' --ignore-merge-commits'
+          fi
+          
+          if [ "${{ inputs.from-latest-tag }}" == "true" ]; then
+            CLI_OPTS+=' --from-latest-tag'
+          fi
+          
+          git fetch --tags # Explicitly fetching all tags for Cocogitto to use
+          
+          cog check $CLI_OPTS || exit 1
+        shell: bash
 
   version:
     runs-on: ubuntu-latest
