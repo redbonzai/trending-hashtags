@@ -100,12 +100,12 @@ The application exposes the following endpoints:
 
 ### 4.2 Testing
 
-- **Run Unit Tests**:
+#### 4.2.1 Executing Unit Tests:
   ```sh
   npm run test
   ```
 
-- **Run Performance Tests**:
+#### 4.2.2 Executing Performance Tests:
   Reference the [PerformanceTesting.md](./PerformanceTesting.md) file for details on running performance tests with `wrk`. This file explains how to benchmark the application, covering different load scenarios.
 
   Here's a simple load test using `wrk`:
@@ -113,6 +113,124 @@ The application exposes the following endpoints:
   wrk -t10 -c200 -d30s -s post.lua http://localhost:8080/tweet
   ```
   For more comprehensive performance tests, including longer durations and various scenarios, see the detailed documentation.
+
+#### 4.2.3 Executing NX Targets
+<details>
+ <summary>Click here to learn about local NX testing</summary>
+ To execute the `project.json` targets or run Nx commands locally on your project, you can follow these steps:
+
+##### 4.2.3.1 Running Nx Commands Locally
+
+    If you have Nx installed globally, then NX commands can be run from the root.
+
+- Navigate to Your Project Directory**
+
+```bash
+cd /path/to/your/project
+```
+
+The `project.json` and `nx.json` files are located in the root.
+
+- Run an Nx Target Defined in `project.json`**
+
+The `project.json` defines several targets like `install-dependencies`, `lint`, `test`, and `build`. See below on how to execute on these targets:
+
+```bash
+nx run trending-hashtags-app:<target>
+```
+
+For example, if you want to run the `lint` target:
+
+```bash
+nx run trending-hashtags-app:lint
+```
+
+If you want to run the `test` target:
+
+```bash
+nx run trending-hashtags-app:test
+```
+
+The general format for executing any target is:
+
+```bash
+nx run <project-name>:<target>
+```
+
+- Running All Targets in the `project.json` File**
+
+You can also run all the defined targets one after another, like:
+
+- First, install dependencies:
+  ```bash
+  nx run trending-hashtags-app:install-dependencies
+  ```
+
+- Then, run lint:
+  ```bash
+  nx run trending-hashtags-app:lint
+  ```
+
+- Run tests:
+  ```bash
+  nx run trending-hashtags-app:test
+  ```
+
+- Build the Docker image:
+  ```bash
+  nx run trending-hashtags-app:build
+  ```
+
+- Push the Docker image (if needed):
+  ```bash
+  nx run trending-hashtags-app:build-push
+  ```
+
+##### 4.2.3.2 Running Nx in Watch Mode
+
+If you want to run a target and watch for file changes, you can add the `--watch` flag:
+
+```bash
+nx run trending-hashtags-app:test --watch
+```
+
+This way, the tests will automatically rerun when any relevant file changes.
+
+##### 4.2.3.2 Run Nx Commands Globally Installed
+
+NX Should be installed globally, thus, you should be able to execute Nx commands without needing `npx`. Just use `nx` directly:
+
+```bash
+nx lint trending-hashtags-app
+nx test trending-hashtags-app
+```
+
+This command pattern is a shorthand where:
+
+- `lint`, `test`, `build` etc., are the targets from the `project.json`.
+- `trending-hashtags-app` is your project name.
+
+##### 4.2.3.3 Verifying Configuration**
+
+If you want to check if Nx can find the targets correctly, you can list the available projects and tasks:
+
+```bash
+nx list
+```
+
+This will list all projects in the workspace and the targets they support.
+
+##### 4.2.3.4 Debugging Issues**
+
+If you encounter issues while running commands, consider:
+
+- Checking the `nx.json` and `project.json` files for correct configuration.
+- Running commands with verbose output to see more details about what's happening:
+
+  ```bash
+  nx run trending-hashtags-app:test --verbose
+  ```
+</details>
 
 ### 4.3 Chain of Events when Application Loads
 

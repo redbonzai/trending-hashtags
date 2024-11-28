@@ -1,0 +1,60 @@
+{
+  "installation": {
+    "version": "20.0.1",
+    "plugins": {
+      "@nx/jest": "20.0.1"
+    }
+  },
+  "pluginsConfig": {
+    "@nx/js": {
+      "projectsAffectedByDependencyUpdates": "auto"
+    }
+  },
+  "targetDefaults": {
+    "nx:run-commands": {
+      "options": {
+        "cwd": "{projectRoot}"
+      }
+    },
+    "@nx-tools/nx-container:build": {
+      "options": {
+        "quiet": true,
+        "context": "{projectRoot}",
+        "provenance": true,
+        "sbom": true,
+        "file": "{projectRoot}/Dockerfile"
+      }
+    },
+    "@nx/js:tsc": {
+      "cache": true,
+      "dependsOn": ["^build"],
+      "inputs": ["default", "^default"]
+    },
+    "@nx/eslint:lint": {
+      "cache": true,
+      "inputs": [
+        "default",
+        "{workspaceRoot}/.eslintrc.json",
+        "{workspaceRoot}/.eslintignore",
+        "{workspaceRoot}/eslint.config.js"
+      ]
+    },
+    "@nx/jest:jest": {
+      "cache": true,
+      "inputs": [
+        "default",
+        "^default",
+        "{workspaceRoot}/jest.config.ts"
+      ],
+      "options": {
+        "passWithNoTests": true
+      },
+      "configurations": {
+        "ci": {
+          "ci": true,
+          "codeCoverage": true
+        }
+      }
+    }
+  }
+}
