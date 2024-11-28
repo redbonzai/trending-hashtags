@@ -1,0 +1,47 @@
+{
+  "name": "trending-hashtags-app",
+  "projectType": "application",
+  "tags": ["trending", "hashtags", "application"],
+  "targets": {
+    "install-dependencies": {
+      "command": "pnpm install"
+    },
+    "lint": {
+      "executor": "nx:run-commands",
+      "options": {
+        "commands": ["pnpm run lint"],
+        "parallel": false
+      },
+      "dependsOn": ["install-dependencies"]
+    },
+    "test": {
+      "executor": "nx:run-commands",
+      "options": {
+        "commands": ["pnpm run test"]
+      },
+      "dependsOn": ["lint"]
+    },
+    "build": {
+      "executor": "@nx-tools/nx-container:build",
+      "options": {
+        "push": false,
+        "context": ".",
+        "file": "./Dockerfile",
+        "tags": [
+          "${DOCKER_IMAGE_NAME}:latest"
+        ]
+      }
+    },
+    "build-push": {
+      "executor": "@nx-tools/nx-container:build",
+      "options": {
+        "push": true,
+        "context": ".",
+        "file": "./Dockerfile",
+        "tags": [
+          "${DOCKER_IMAGE_NAME}:latest"
+        ]
+      }
+    }
+  }
+}
