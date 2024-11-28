@@ -37,13 +37,4 @@ import { Tweet } from './entities/tweet.entity';
   providers: [],
   exports: [],
 })
-export class DatabaseModule {
-  constructor(private readonly configService: ConfigService) {
-    console.log('DatabaseModule has been initialized');
-    console.log('DB_HOST:', this.configService.get('DB_HOST'));
-    console.log('DB_PORT:', this.configService.get('DB_PORT'));
-    console.log('POSTGRES_USER:', this.configService.get('POSTGRES_USER'));
-    console.log('DB PASS:', this.configService.get('POSTGRES_PASSWORD'));
-    console.log('POSTGRES_DB:', this.configService.get('POSTGRES_DB'));
-  }
-}
+export class DatabaseModule {}

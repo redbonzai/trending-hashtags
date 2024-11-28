@@ -9,16 +9,22 @@ export async function tweetGeneratorWorker(tweetService: TweetService) {
   const logger = new Logger('TweetGeneratorWorker');
   const redisUrl = process.env.REDIS_URL || 'redis://localhost:6379';
   const connection = new Redis(redisUrl, {
-    maxRetriesPerRequest: null, // Must be null for BullMQ
+    maxRetriesPerRequest: null,
   });
 
   try {
+    logger.log('Attempting to initialize TweetGeneratorWorker...');
+
     const worker = new Worker(
       'tweet-generation',
       async (job: Job) => {
         try {
           const tweets: Partial<Tweet>[] = [];
-          const bulkTweetData = Array.isArray(job.data) ? job.data : [job.data]; // Ensure bulk or single jobs can be processed
+          const bulkTweetData = Array.isArray(job.data) ? job.data : [job.data];
+
+          logger.debug(
+            `Processing job with data: ${JSON.stringify(bulkTweetData)}`,
+          );
 
           for (const data of bulkTweetData) {
             const { content } = data;
@@ -31,31 +37,30 @@ export async function tweetGeneratorWorker(tweetService: TweetService) {
               continue;
             }
 
-            tweets.push({
-              content,
-            });
+            tweets.push({ content });
 
-            // Mark tweet as processed in Redis (this is optional, could be removed if processing is handled as bulk)
+            // Mark tweet as processed in Redis
             await connection.set(tweetId, 'processed', 'EX', 86400);
           }
 
-          // If there are any new tweets to save, save them in bulk
           if (tweets.length > 0) {
             logger.debug('Creating bulk tweets in database...');
             await tweetService.createBulkTweets(tweets);
-            // Publish an event to notify listeners that a tweet has been created
             connection.publish('tweet-created', JSON.stringify({ tweets }));
           }
 
           logger.debug('Bulk tweet processing completed successfully.');
         } catch (error) {
           logger.error(`Error processing bulk tweets: ${error.message}`);
-          throw error; // Allow BullMQ to handle retries
+          if (error.stack) {
+            logger.error(error.stack);
+          }
+          throw error;
         }
       },
       {
         connection: connection,
-        concurrency: 20, // Increase concurrency for better bulk processing
+        concurrency: 20,
         autorun: true,
         removeOnComplete: {
           age: 3600,
@@ -64,40 +69,25 @@ export async function tweetGeneratorWorker(tweetService: TweetService) {
       },
     );
 
-    worker.on('active', (job) => {
-      logger.debug(`Job ${job.id} is now active!`);
-    });
-
-    worker.on('completed', (job) => {
-      logger.debug(`Job ${job.id} has completed!`);
-    });
-
-    worker.on('failed', (job, err) => {
-      logger.error(`Job ${job?.id} has failed with error: ${err.message}`);
-    });
-
     worker.on('ready', () => {
       logger.log('Worker is ready and polling for jobs.');
     });
 
-    worker.on('closing', () => {
-      logger.log(
-        'Worker is closing. Attempting to complete in-progress jobs...',
-      );
-    });
-
-    connection.on('connect', () => {
-      logger.log('Worker successfully connected to Redis.');
-    });
-
-    connection.on('error', (err) => {
-      logger.error('Redis Error:', err.message);
+    worker.on('error', (err) => {
+      logger.error(`Worker initialization failed: ${err.message}`);
+      if (err.stack) {
+        logger.error(err.stack);
+      }
     });
 
     logger.log('Tweet generation worker initialized successfully.');
-    await worker.run();
   } catch (error) {
-    logger.error('Failed to initialize the TweetGeneratorWorker:', error);
+    logger.error(
+      `Failed to initialize the TweetGeneratorWorker: ${error.message}`,
+    );
+    if (error.stack) {
+      logger.error(error.stack);
+    }
   }
 }
 
