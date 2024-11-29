@@ -342,6 +342,8 @@ This task is responsible for updating the hashtag counts in both PostgreSQL and 
   - Using Pipelining for Efficiency: To efficiently update Redis, the process uses pipelining, a technique that batches multiple Redis commands to reduce the number of round-trip calls between the application and Redis. This reduces the overall latency and network overhead, allowing hashtags to be updated in Redis quickly and efficiently.
 
 ### 6.4 Scalability - Large Cardinality of Hashtags
+- TBD
+
 ## 7. Conclusion
 
 This application is designed to handle the requirements outlined in the prompt, providing a scalable and durable solution for managing trending hashtags based on tweet activity. The automated processes running in the background ensure the system remains performant and that data is consistently updated.
