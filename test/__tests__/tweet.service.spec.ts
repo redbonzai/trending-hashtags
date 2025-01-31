@@ -5,11 +5,11 @@ import { Tweet as TweetEntity } from '../../src/database/entities/tweet.entity';
 import { TweetResponse } from '@app/interfaces/tweet-response.interface';
 import { TrendingRepository } from '@app/trending/trending.repository';
 
-const mockTweetRepository = {
-  saveTweet: jest.fn(),
-  saveBulkTweets: jest.fn(),
-  getTweetsWithHashtags: jest.fn(),
-};
+// const mockTweetRepository = {
+//   saveTweet: jest.fn(),
+//   saveBulkTweets: jest.fn(),
+//   getTweetsWithHashtags: jest.fn(),
+// };
 
 describe('TweetService', () => {
   let service: TweetService;

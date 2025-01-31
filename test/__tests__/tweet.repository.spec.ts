@@ -72,7 +72,11 @@ describe('TweetRepository', () => {
     // Step 6: Inject instances
     tweetRepository = module.get<TweetRepository>(TweetRepository);
     // Inject mocked Redis client into TweetRepository instance
-    (tweetRepository as any).redisClient = redisClientMock;
+    // unknown prevents TypeScript from throwing type errors while avoiding any.
+    //   typeof redisClientMock ensures that the structure matches the expected Redis client, maintaining type safety.
+    (
+      tweetRepository as unknown as { redisClient: typeof redisClientMock }
+    ).redisClient = redisClientMock;
   });
 
   describe('saveTweet', () => {

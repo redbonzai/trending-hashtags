@@ -10,7 +10,7 @@ import { createHash } from 'crypto';
 export class TweetRepository {
   private tweetRepo: Repository<Tweet>;
   private hashtagRepo: Repository<Hashtag>;
-  private redisClient: Redis;
+  public redisClient: Redis;
   private readonly logger = new Logger(TweetRepository.name);
 
   constructor(
