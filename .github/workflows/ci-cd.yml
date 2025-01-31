@@ -50,7 +50,7 @@ jobs:
       - name: Install Dependencies
         run: pnpm install
       - name: Run Tests
-        run: pnpm nx run trending-hashtags-app:test
+        run: npx nx run trending-hashtags-app:test
 
   check-commits:
     runs-on: ubuntu-latest

@@ -10,7 +10,6 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
       inject: [ConfigService],
       useFactory: async (configService: ConfigService) => {
         const logLevel = configService.get<string>('LOG_LEVEL', 'debug');
-        console.log('LOG LEVEL', logLevel);
         return {
           pinoHttp: {
             level: logLevel,
